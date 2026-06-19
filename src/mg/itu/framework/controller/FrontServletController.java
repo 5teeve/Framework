@@ -4,6 +4,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import mg.itu.framework.dto.MethodDTO;
 import mg.itu.framework.utils.Utilitaire;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ public abstract class FrontServletController extends HttpServlet {
 
     private Utilitaire utilitaire;
     private List<Class<?>> listeController = new ArrayList<>();
+    private List<MethodDTO> listeMethode = new ArrayList<>();
 
     @Override
     public void init() {
@@ -31,6 +33,8 @@ public abstract class FrontServletController extends HttpServlet {
                 listeController.addAll(utilitaire.findController(classes));
             }
         }
+
+        listeMethode.addAll(utilitaire.findMethod(listeController));
     }
 
     private String getParamName() {
@@ -46,29 +50,52 @@ public abstract class FrontServletController extends HttpServlet {
         return Arrays.asList(splitPackages);
     }
 
+    private MethodDTO trouverMapping(String url) {
+        for (MethodDTO dto : listeMethode) {
+            if (dto.getUrl().equals(url)) {
+                return dto;
+            }
+        }
+        return null;
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
         res.setContentType("text/html;charset=UTF-8");
 
+        String url = req.getPathInfo();
+        if (url == null || url.trim().isEmpty()) {
+            url = "/";
+        }
+
         try (PrintWriter out = res.getWriter()) {
             out.println("<html>");
             out.println("<head>");
-            out.println("<title>Bienvenue</title>");
+            out.println("<title>Front Controller</title>");
             out.println("</head>");
             out.println("<body>");
-            out.println("<h1>Bienvenue dans ma Framework !</h1>");
-            out.println("<p>Cette page est générée dynamiquement par le framework.</p>");
+            out.println("<h1>Front Controller</h1>");
+            out.println("<p>Url demandee : " + url + "</p>");
 
-            out.println("<h2>Controllers detectes (" + listeController.size() + ")</h2>");
-            if (listeController.isEmpty()) {
-                out.println("<p>Aucune classe annotee @Controller n'a ete trouvee.</p>");
+            MethodDTO trouve = trouverMapping(url);
+
+            if (trouve != null) {
+                out.println("<h3>Mapping trouve</h3>");
+                out.println("<p>" + trouve + "</p>");
             } else {
-                out.println("<ul>");
-                for (Class<?> controller : listeController) {
-                    out.println("<li>" + controller.getName() + "</li>");
+                out.println("<h4>Erreur</h4>");
+                out.println("<p>Url inconnue : \"" + url + "\". Cette url n'est associee a aucune methode.</p>");
+                out.println("<h3>Urls connues :</h3>");
+                if (listeMethode.isEmpty()) {
+                    out.println("<p>Aucune url connue.</p>");
+                } else {
+                    out.println("<ul>");
+                    for (MethodDTO dto : listeMethode) {
+                        out.println("<li>" + dto + "</li>");
+                    }
+                    out.println("</ul>");
                 }
-                out.println("</ul>");
             }
 
             out.println("</body>");

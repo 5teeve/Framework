@@ -22,7 +22,4 @@ fi
 echo ">> Generation du JAR..."
 jar cf $JAR_NAME -C $OUT_DIR .
 
-echo ">> Deploiement dans Tomcat..."
-cp $JAR_NAME $TOMCAT_HOME/lib/
-
 echo "OK — $JAR_NAME deploye dans $TOMCAT_HOME/lib/"
