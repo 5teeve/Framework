@@ -1,9 +1,12 @@
 package mg.itu.framework.utils;
 
 import mg.itu.framework.annotation.Controller;
+import mg.itu.framework.annotation.UrlMapping;
+import mg.itu.framework.dto.MethodDTO;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -12,6 +15,27 @@ import java.util.List;
 public class Utilitaire {
 
     public Utilitaire() {
+    }
+
+    public List<MethodDTO> findMethod(List<Class<?>> classes) {
+        List<MethodDTO> methodes = new ArrayList<>();
+
+        for (Class<?> clazz : classes) {
+            for (Method method : clazz.getMethods()) {
+                if (method.isAnnotationPresent(UrlMapping.class)) {
+                    UrlMapping urlMapping = method.getAnnotation(UrlMapping.class);
+
+                    MethodDTO dto = new MethodDTO();
+                    dto.setUrl(urlMapping.url());
+                    dto.setClazz(clazz);
+                    dto.setMethod(method);
+
+                    methodes.add(dto);
+                }
+            }
+        }
+
+        return methodes;
     }
 
     public List<Class<?>> chargerClassePath(String packageName) {
