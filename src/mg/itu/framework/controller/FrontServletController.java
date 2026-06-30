@@ -11,13 +11,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class FrontServletController extends HttpServlet {
 
     private Utilitaire utilitaire;
     private List<Class<?>> listeController = new ArrayList<>();
-    private List<MethodDTO> listeMethode = new ArrayList<>();
+    private Map<String, MethodDTO> mapMethode = new LinkedHashMap<>();
 
     @Override
     public void init() {
@@ -34,7 +36,7 @@ public abstract class FrontServletController extends HttpServlet {
             }
         }
 
-        listeMethode.addAll(utilitaire.findMethod(listeController));
+        mapMethode.putAll(utilitaire.findMethod(listeController));
     }
 
     private String getParamName() {
@@ -48,15 +50,6 @@ public abstract class FrontServletController extends HttpServlet {
         }
         String[] splitPackages = linePackages.split(";;");
         return Arrays.asList(splitPackages);
-    }
-
-    private MethodDTO trouverMapping(String url) {
-        for (MethodDTO dto : listeMethode) {
-            if (dto.getUrl().equals(url)) {
-                return dto;
-            }
-        }
-        return null;
     }
 
     @Override
@@ -78,21 +71,21 @@ public abstract class FrontServletController extends HttpServlet {
             out.println("<h1>Front Controller</h1>");
             out.println("<p>Url demandee : " + url + "</p>");
 
-            MethodDTO trouve = trouverMapping(url);
+            MethodDTO trouve = mapMethode.get(url);
 
             if (trouve != null) {
                 out.println("<h3>Mapping trouve</h3>");
-                out.println("<p>" + trouve + "</p>");
+                out.println("<p>" + url + " " + trouve + "</p>");
             } else {
                 out.println("<h4>Erreur</h4>");
                 out.println("<p>Url inconnue : \"" + url + "\". Cette url n'est associee a aucune methode.</p>");
                 out.println("<h3>Urls connues :</h3>");
-                if (listeMethode.isEmpty()) {
+                if (mapMethode.isEmpty()) {
                     out.println("<p>Aucune url connue.</p>");
                 } else {
                     out.println("<ul>");
-                    for (MethodDTO dto : listeMethode) {
-                        out.println("<li>" + dto + "</li>");
+                    for (Map.Entry<String, MethodDTO> entry : mapMethode.entrySet()) {
+                        out.println("<li>" + entry.getKey() + " " + entry.getValue() + "</li>");
                     }
                     out.println("</ul>");
                 }

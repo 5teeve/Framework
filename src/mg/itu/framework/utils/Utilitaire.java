@@ -10,15 +10,17 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Utilitaire {
 
     public Utilitaire() {
     }
 
-    public List<MethodDTO> findMethod(List<Class<?>> classes) {
-        List<MethodDTO> methodes = new ArrayList<>();
+    public Map<String, MethodDTO> findMethod(List<Class<?>> classes) {
+        Map<String, MethodDTO> methodes = new LinkedHashMap<>();
 
         for (Class<?> clazz : classes) {
             for (Method method : clazz.getMethods()) {
@@ -26,11 +28,10 @@ public class Utilitaire {
                     UrlMapping urlMapping = method.getAnnotation(UrlMapping.class);
 
                     MethodDTO dto = new MethodDTO();
-                    dto.setUrl(urlMapping.url());
                     dto.setClazz(clazz);
                     dto.setMethod(method);
 
-                    methodes.add(dto);
+                    methodes.put(urlMapping.url(), dto);
                 }
             }
         }
