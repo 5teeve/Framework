@@ -23,3 +23,7 @@ mis a jour du fonction pour avoir le map avec cette clee et par rapport a la met
 creation de fonction void avec un system.out.println
 creer un instance de cette classe (instanciena fona aloha isaky ny miantso)
 invoker le methode apres
+
+# Sprint 04
+- Deplacer le load des class dans le Listner (precedemment dans init):
+  - Pour charger toutes les classes dès que la page charge
