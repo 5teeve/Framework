@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,6 +23,18 @@ import mg.itu.framework.exception.RouteDejaDefinieException;
 public class Utilitaire {
 
     public Utilitaire() {
+    }
+
+    /**
+     * Parse une liste de packages separes par ";;" (init-param ou context-param).
+     * Retourne une liste vide si la chaine est nulle/vide -> parcours complet du classpath.
+     */
+    public static List<String> parsePackages(String linePackages) {
+        if (linePackages == null || linePackages.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        String[] splitPackages = linePackages.split(";;");
+        return Arrays.asList(splitPackages);
     }
 
     public Map<RequestMapping, MethodDTO> findMethod(List<Class<?>> classes) {
