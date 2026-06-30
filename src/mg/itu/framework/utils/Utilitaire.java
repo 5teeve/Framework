@@ -10,11 +10,14 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import mg.itu.framework.dto.RequestMapping;
+import mg.itu.framework.exception.RouteDejaDefinieException;
 
 public class Utilitaire {
 
@@ -23,6 +26,7 @@ public class Utilitaire {
 
     public Map<RequestMapping, MethodDTO> findMethod(List<Class<?>> classes) {
         Map<RequestMapping, MethodDTO> methodes = new LinkedHashMap<>();
+        Set<Integer> hashCodesVus = new HashSet<>();
 
         for (Class<?> clazz : classes) {
             for (Method method : clazz.getMethods()) {
@@ -34,6 +38,17 @@ public class Utilitaire {
                     dto.setMethod(method);
 
                     RequestMapping key = new RequestMapping(urlMapping.url(), urlMapping.method());
+                    int hash = key.hashCode();
+
+                    if (hashCodesVus.contains(hash)) {
+                        throw new RouteDejaDefinieException(
+                                "Route en doublon : \"" + key.getUrl() + "\" [" + key.getMethod()
+                                        + "] (hashCode=" + hash + ") est deja associee a une methode existante ;"
+                                        + " impossible de l'associer aussi a " + dto + ".");
+                    }
+
+                    hashCodesVus.add(hash);
+
                     methodes.put(key, dto);
                 }
             }
