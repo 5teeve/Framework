@@ -19,11 +19,6 @@ public class Utilitaire {
     public Utilitaire() {
     }
 
-    /**
-     * Parmi une liste de classes (typiquement les controllers), retourne une
-     * Map liant chaque url declaree par @UrlMapping au MethodDTO (classe +
-     * methode) correspondant.
-     */
     public Map<String, MethodDTO> findMethod(List<Class<?>> classes) {
         Map<String, MethodDTO> methodes = new LinkedHashMap<>();
 
