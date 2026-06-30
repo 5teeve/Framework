@@ -43,7 +43,6 @@ public abstract class FrontServletController extends HttpServlet {
                 listeController.addAll(utilitaire.findController(classes));
             }
         }
-
         mapMethode.putAll(utilitaire.findMethod(listeController));
     }
 

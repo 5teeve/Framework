@@ -25,10 +25,6 @@ public class Utilitaire {
     public Utilitaire() {
     }
 
-    /**
-     * Parse une liste de packages separes par ";;" (init-param ou context-param).
-     * Retourne une liste vide si la chaine est nulle/vide -> parcours complet du classpath.
-     */
     public static List<String> parsePackages(String linePackages) {
         if (linePackages == null || linePackages.trim().isEmpty()) {
             return new ArrayList<>();
