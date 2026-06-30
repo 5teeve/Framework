@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import mg.itu.framework.dto.MethodDTO;
+import mg.itu.framework.dto.RequestMapping;
 import mg.itu.framework.utils.Utilitaire;
 
 import java.io.IOException;
@@ -19,7 +20,7 @@ public abstract class FrontServletController extends HttpServlet {
 
     private Utilitaire utilitaire;
     private List<Class<?>> listeController = new ArrayList<>();
-    private Map<String, MethodDTO> mapMethode = new LinkedHashMap<>();
+    private Map<RequestMapping, MethodDTO> mapMethode = new LinkedHashMap<>();
 
     @Override
     public void init() {
@@ -55,12 +56,24 @@ public abstract class FrontServletController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
+        handleRequest(req, res);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse res)
+            throws ServletException, IOException {
+        handleRequest(req, res);
+    }
+
+    private void handleRequest(HttpServletRequest req, HttpServletResponse res)
+            throws ServletException, IOException {
         res.setContentType("text/html;charset=UTF-8");
 
         String url = req.getPathInfo();
         if (url == null || url.trim().isEmpty()) {
             url = "/";
         }
+        String httpMethod = req.getMethod();
 
         try (PrintWriter out = res.getWriter()) {
             out.println("<html>");
@@ -69,23 +82,34 @@ public abstract class FrontServletController extends HttpServlet {
             out.println("</head>");
             out.println("<body>");
             out.println("<h1>Front Controller</h1>");
-            out.println("<p>Url demandee : " + url + "</p>");
+            out.println("<p>Url demandee : " + url + " [" + httpMethod + "]</p>");
 
-            MethodDTO trouve = mapMethode.get(url);
+            RequestMapping demande = new RequestMapping(url, httpMethod);
+            MethodDTO trouve = mapMethode.get(demande);
 
             if (trouve != null) {
-                out.println("<h3>Mapping trouve</h3>");
-                out.println("<p>" + url + " " + trouve + "</p>");
+                try {
+                    Class<?> controllerClass = trouve.getMethod().getDeclaringClass();
+                    Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
+                    trouve.getMethod().invoke(controllerInstance);
+
+                    out.println("<h3>Mapping trouve</h3>");
+                    out.println("<p>" + url + " " + trouve + "</p>");
+                } catch (ReflectiveOperationException e) {
+                    throw new ServletException("Erreur lors de l'invocation de " + trouve, e);
+                }
             } else {
                 out.println("<h4>Erreur</h4>");
-                out.println("<p>Url inconnue : \"" + url + "\". Cette url n'est associee a aucune methode.</p>");
+                out.println("<p>Url inconnue : \"" + url + "\" [" + httpMethod
+                        + "]. Cette url n'est associee a aucune methode.</p>");
                 out.println("<h3>Urls connues :</h3>");
                 if (mapMethode.isEmpty()) {
                     out.println("<p>Aucune url connue.</p>");
                 } else {
                     out.println("<ul>");
-                    for (Map.Entry<String, MethodDTO> entry : mapMethode.entrySet()) {
-                        out.println("<li>" + entry.getKey() + " " + entry.getValue() + "</li>");
+                    for (Map.Entry<RequestMapping, MethodDTO> entry : mapMethode.entrySet()) {
+                        out.println("<li>" + entry.getKey().getUrl() + " [" + entry.getKey().getMethod() + "] "
+                                + entry.getValue() + "</li>");
                     }
                     out.println("</ul>");
                 }
@@ -94,11 +118,5 @@ public abstract class FrontServletController extends HttpServlet {
             out.println("</body>");
             out.println("</html>");
         }
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse res)
-            throws ServletException, IOException {
-        this.doGet(req, res);
     }
 }

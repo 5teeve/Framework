@@ -9,4 +9,6 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface UrlMapping {
     public String url();
+
+    public String method() default "GET";
 }

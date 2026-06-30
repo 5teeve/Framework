@@ -14,13 +14,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import mg.itu.framework.dto.RequestMapping;
+
 public class Utilitaire {
 
     public Utilitaire() {
     }
 
-    public Map<String, MethodDTO> findMethod(List<Class<?>> classes) {
-        Map<String, MethodDTO> methodes = new LinkedHashMap<>();
+    public Map<RequestMapping, MethodDTO> findMethod(List<Class<?>> classes) {
+        Map<RequestMapping, MethodDTO> methodes = new LinkedHashMap<>();
 
         for (Class<?> clazz : classes) {
             for (Method method : clazz.getMethods()) {
@@ -31,7 +33,8 @@ public class Utilitaire {
                     dto.setClazz(clazz);
                     dto.setMethod(method);
 
-                    methodes.put(urlMapping.url(), dto);
+                    RequestMapping key = new RequestMapping(urlMapping.url(), urlMapping.method());
+                    methodes.put(key, dto);
                 }
             }
         }
