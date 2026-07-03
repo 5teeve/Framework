@@ -1,1 +1,1 @@
-# Creating a fram work from scratch with java
+# Creating a framework from scratch with java
