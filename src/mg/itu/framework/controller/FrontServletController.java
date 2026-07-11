@@ -6,12 +6,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import mg.itu.framework.dto.MethodDTO;
 import mg.itu.framework.dto.RequestMapping;
+import mg.itu.framework.listener.FrameworkInitializerListener;
 import mg.itu.framework.utils.Utilitaire;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +23,16 @@ public abstract class FrontServletController extends HttpServlet {
     private Map<RequestMapping, MethodDTO> mapMethode = new LinkedHashMap<>();
 
     @Override
+    @SuppressWarnings("unchecked")
     public void init() {
+        Object mapPubliee = getServletContext().getAttribute(FrameworkInitializerListener.MAPPING_ATTRIBUTE);
+
+        if (mapPubliee instanceof Map) {
+            mapMethode.putAll((Map<RequestMapping, MethodDTO>) mapPubliee);
+            return;
+        }
         utilitaire = new Utilitaire();
-        List<String> packagesName = getPackageNames(getParamName());
+        List<String> packagesName = Utilitaire.parsePackages(getInitParameter(getParamName()));
 
         if (packagesName.isEmpty()) {
             List<Class<?>> classes = utilitaire.chargerClassePath("all");
@@ -36,21 +43,11 @@ public abstract class FrontServletController extends HttpServlet {
                 listeController.addAll(utilitaire.findController(classes));
             }
         }
-
         mapMethode.putAll(utilitaire.findMethod(listeController));
     }
 
     private String getParamName() {
         return "packages";
-    }
-
-    private List<String> getPackageNames(String paramName) {
-        String linePackages = getInitParameter(paramName);
-        if (linePackages == null || linePackages.trim().isEmpty()) {
-            return new ArrayList<>();
-        }
-        String[] splitPackages = linePackages.split(";;");
-        return Arrays.asList(splitPackages);
     }
 
     @Override
