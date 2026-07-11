@@ -6,12 +6,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import mg.itu.framework.dto.MethodDTO;
 import mg.itu.framework.dto.RequestMapping;
+import mg.itu.framework.listener.FrameworkInitializerListener;
 import mg.itu.framework.utils.Utilitaire;
+import mg.itu.framework.vue.ViewResolver;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,36 +22,37 @@ public abstract class FrontServletController extends HttpServlet {
     private Utilitaire utilitaire;
     private List<Class<?>> listeController = new ArrayList<>();
     private Map<RequestMapping, MethodDTO> mapMethode = new LinkedHashMap<>();
+    private ViewResolver viewResolver;
 
     @Override
+    @SuppressWarnings("unchecked")
     public void init() {
-        utilitaire = new Utilitaire();
-        List<String> packagesName = getPackageNames(getParamName());
-
-        if (packagesName.isEmpty()) {
-            List<Class<?>> classes = utilitaire.chargerClassePath("all");
-            listeController.addAll(utilitaire.findController(classes));
+        // --- Map de routage ---
+        Object mapPubliee = getServletContext().getAttribute(FrameworkInitializerListener.MAPPING_ATTRIBUTE);
+        if (mapPubliee instanceof Map) {
+            mapMethode.putAll((Map<RequestMapping, MethodDTO>) mapPubliee);
         } else {
-            for (String packageName : packagesName) {
-                List<Class<?>> classes = utilitaire.chargerClassePath(packageName);
-                listeController.addAll(utilitaire.findController(classes));
+            // fallback : listener non actif
+            utilitaire = new Utilitaire();
+            List<String> packagesName = Utilitaire.parsePackages(getInitParameter("base-packages"));
+            if (packagesName.isEmpty()) {
+                listeController.addAll(utilitaire.findController(utilitaire.chargerClassePath("all")));
+            } else {
+                for (String pkg : packagesName) {
+                    listeController.addAll(utilitaire.findController(utilitaire.chargerClassePath(pkg)));
+                }
             }
+            mapMethode.putAll(utilitaire.findMethod(listeController));
         }
 
-        mapMethode.putAll(utilitaire.findMethod(listeController));
-    }
-
-    private String getParamName() {
-        return "packages";
-    }
-
-    private List<String> getPackageNames(String paramName) {
-        String linePackages = getInitParameter(paramName);
-        if (linePackages == null || linePackages.trim().isEmpty()) {
-            return new ArrayList<>();
+        // --- ViewResolver ---
+        Object vrPublie = getServletContext().getAttribute(FrameworkInitializerListener.VIEW_RESOLVER_ATTRIBUTE);
+        if (vrPublie instanceof ViewResolver) {
+            viewResolver = (ViewResolver) vrPublie;
+        } else {
+            // fallback : valeurs par défaut
+            viewResolver = new ViewResolver("/WEB-INF/views/", ".jsp");
         }
-        String[] splitPackages = linePackages.split(";;");
-        return Arrays.asList(splitPackages);
     }
 
     @Override
@@ -67,7 +69,6 @@ public abstract class FrontServletController extends HttpServlet {
 
     private void handleRequest(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
-        res.setContentType("text/html;charset=UTF-8");
 
         String url = req.getPathInfo();
         if (url == null || url.trim().isEmpty()) {
@@ -75,48 +76,29 @@ public abstract class FrontServletController extends HttpServlet {
         }
         String httpMethod = req.getMethod();
 
-        try (PrintWriter out = res.getWriter()) {
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Front Controller</title>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Front Controller</h1>");
-            out.println("<p>Url demandee : " + url + " [" + httpMethod + "]</p>");
+        RequestMapping demande = new RequestMapping(url, httpMethod);
+        MethodDTO trouve = mapMethode.get(demande);
 
-            RequestMapping demande = new RequestMapping(url, httpMethod);
-            MethodDTO trouve = mapMethode.get(demande);
-
-            if (trouve != null) {
-                try {
-                    Class<?> controllerClass = trouve.getMethod().getDeclaringClass();
-                    Object controllerInstance = controllerClass.getDeclaredConstructor().newInstance();
-                    trouve.getMethod().invoke(controllerInstance);
-
-                    out.println("<h3>Mapping trouve</h3>");
-                    out.println("<p>" + url + " " + trouve + "</p>");
-                } catch (ReflectiveOperationException e) {
-                    throw new ServletException("Erreur lors de l'invocation de " + trouve, e);
-                }
-            } else {
-                out.println("<h4>Erreur</h4>");
-                out.println("<p>Url inconnue : \"" + url + "\" [" + httpMethod
-                        + "]. Cette url n'est associee a aucune methode.</p>");
-                out.println("<h3>Urls connues :</h3>");
-                if (mapMethode.isEmpty()) {
-                    out.println("<p>Aucune url connue.</p>");
-                } else {
-                    out.println("<ul>");
-                    for (Map.Entry<RequestMapping, MethodDTO> entry : mapMethode.entrySet()) {
-                        out.println("<li>" + entry.getKey().getUrl() + " [" + entry.getKey().getMethod() + "] "
-                                + entry.getValue() + "</li>");
-                    }
-                    out.println("</ul>");
-                }
+        if (trouve != null) {
+            try {
+                Object result = Utilitaire.invokeMethod(trouve);
+                Utilitaire.render(result, viewResolver, req, res);
+            } catch (Exception e) {
+                throw new ServletException("Erreur lors de l'invocation de " + trouve, e);
             }
-
-            out.println("</body>");
-            out.println("</html>");
+        } else {
+            res.setContentType("text/html;charset=UTF-8");
+            try (PrintWriter out = res.getWriter()) {
+                out.println("<h4>Erreur 404</h4>");
+                out.println("<p>Url inconnue : \"" + url + "\" [" + httpMethod + "]</p>");
+                out.println("<h5>Routes disponibles :</h5><ul>");
+                for (Map.Entry<RequestMapping, MethodDTO> entry : mapMethode.entrySet()) {
+                    out.println("<li>" + entry.getKey().getUrl()
+                            + " [" + entry.getKey().getMethod() + "] → "
+                            + entry.getValue() + "</li>");
+                }
+                out.println("</ul>");
+            }
         }
     }
 }
