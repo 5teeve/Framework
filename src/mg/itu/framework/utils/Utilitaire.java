@@ -31,6 +31,13 @@ public class Utilitaire {
     public Utilitaire() {
     }
 
+    public static List<String> parsePackages(String linePackages) {
+        if (linePackages == null || linePackages.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(linePackages.split(";;"));
+    }
+
     public static Object invokeMethod(MethodDTO dto) throws Exception {
         Object instance = dto.getMethod().getDeclaringClass()
                 .getDeclaredConstructor().newInstance();
