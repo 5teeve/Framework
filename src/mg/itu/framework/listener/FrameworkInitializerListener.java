@@ -16,12 +16,12 @@ import java.util.Map;
 @WebListener
 public class FrameworkInitializerListener implements ServletContextListener {
 
-    public static final String PACKAGES_PARAM      = "base-packages";
-    public static final String PREFIX_PARAM        = "view.prefix";
-    public static final String SUFFIX_PARAM        = "view.suffix";
+    public static final String PACKAGES_PARAM = "base-packages";
+    public static final String PREFIX_PARAM = "view.prefix";
+    public static final String SUFFIX_PARAM = "view.suffix";
 
-    public static final String CONTROLLERS_ATTRIBUTE   = "mg.itu.framework.listeController";
-    public static final String MAPPING_ATTRIBUTE       = "mg.itu.framework.mapMethode";
+    public static final String CONTROLLERS_ATTRIBUTE = "mg.itu.framework.listeController";
+    public static final String MAPPING_ATTRIBUTE = "mg.itu.framework.mapMethode";
     public static final String VIEW_RESOLVER_ATTRIBUTE = "mg.itu.framework.viewResolver";
 
     @Override
@@ -53,8 +53,7 @@ public class FrameworkInitializerListener implements ServletContextListener {
         String suffix = context.getInitParameter(SUFFIX_PARAM);
         ViewResolver viewResolver = new ViewResolver(
                 prefix != null ? prefix : "/WEB-INF/views/",
-                suffix != null ? suffix : ".jsp"
-        );
+                suffix != null ? suffix : ".jsp");
         context.setAttribute(VIEW_RESOLVER_ATTRIBUTE, viewResolver);
 
         System.out.println("FrameworkInitializerListener : " + listeController.size()

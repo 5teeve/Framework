@@ -39,7 +39,7 @@ public class Utilitaire {
     }
 
     public static Object invokeMethod(MethodDTO dto) throws Exception {
-        Object instance = dto.getMethod().getDeclaringClass()
+        Object instance = dto.getMethod().getDeclaringClass()   
                 .getDeclaredConstructor().newInstance();
         return dto.getMethod().invoke(instance);
     }
