@@ -27,3 +27,5 @@ invoker le methode apres
 # Sprint 04
 - Deplacer le load des class dans le Listner (precedemment dans init):
   - Pour charger toutes les classes dès que la page charge
+
+# Sprint 06

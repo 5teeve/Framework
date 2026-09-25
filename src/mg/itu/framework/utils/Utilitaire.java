@@ -1,6 +1,7 @@
 package mg.itu.framework.utils;
 
 import mg.itu.framework.annotation.Controller;
+import mg.itu.framework.annotation.Json;
 import mg.itu.framework.annotation.UrlMapping;
 import mg.itu.framework.dto.MethodDTO;
 
@@ -44,9 +45,13 @@ public class Utilitaire {
         return dto.getMethod().invoke(instance);
     }
 
-    public static void render(Object result, ViewResolver vr,
+    public static void render(Method method, Object result, ViewResolver vr,
             HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
+        if (method.isAnnotationPresent(Json.class)) {
+            res.setContentType("application/json;charset=UTF-8");
+            res.getWriter().write(new ObjectMapper().writeValueAsString(result));
+        }
         if (result instanceof String) {
             req.getRequestDispatcher(vr.resolve((String) result))
                     .forward(req, res);
