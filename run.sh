@@ -6,13 +6,14 @@ SRC_DIR="src"
 OUT_DIR="out"
 JAR_NAME="framework.jar"
 SERVLET_API="$LIB_DIR/servlet-api.jar"
+CLASSPATH="$LIB_DIR/*"
 
 echo ">> Nettoyage..."
 rm -rf $OUT_DIR
 mkdir -p $OUT_DIR
 
 echo ">> Compilation..."
-javac -cp $SERVLET_API -d $OUT_DIR $(find $SRC_DIR -name "*.java")
+javac -cp "$CLASSPATH" -d $OUT_DIR $(find $SRC_DIR -name "*.java")
 
 if [ $? -ne 0 ]; then
     echo "ERREUR : compilation echouee"

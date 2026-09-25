@@ -1,6 +1,7 @@
 package mg.itu.framework.utils;
 
 import mg.itu.framework.annotation.Controller;
+import mg.itu.framework.annotation.Json;
 import mg.itu.framework.annotation.UrlMapping;
 import mg.itu.framework.dto.MethodDTO;
 
@@ -17,6 +18,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,14 +42,21 @@ public class Utilitaire {
     }
 
     public static Object invokeMethod(MethodDTO dto) throws Exception {
-        Object instance = dto.getMethod().getDeclaringClass()   
+        Object instance = dto.getMethod().getDeclaringClass()
                 .getDeclaredConstructor().newInstance();
         return dto.getMethod().invoke(instance);
     }
 
-    public static void render(Object result, ViewResolver vr,
+    public static void render(Method method, Object result, ViewResolver vr,
             HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
+
+        if (method.isAnnotationPresent(Json.class)) {
+            res.setContentType("application/json");
+            res.getWriter().write(new ObjectMapper().writeValueAsString(result));
+            return;
+        }
+        
         if (result instanceof String) {
             req.getRequestDispatcher(vr.resolve((String) result))
                     .forward(req, res);
