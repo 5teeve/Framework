@@ -27,6 +27,8 @@ import mg.itu.framework.exception.RouteDejaDefinieException;
 import mg.itu.framework.vue.ModelAndView;
 import mg.itu.framework.vue.ViewResolver;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class Utilitaire {
 
     public Utilitaire() {
@@ -51,7 +53,9 @@ public class Utilitaire {
         if (method.isAnnotationPresent(Json.class)) {
             res.setContentType("application/json;charset=UTF-8");
             res.getWriter().write(new ObjectMapper().writeValueAsString(result));
+            return;
         }
+
         if (result instanceof String) {
             req.getRequestDispatcher(vr.resolve((String) result))
                     .forward(req, res);
