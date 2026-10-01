@@ -1,6 +1,7 @@
 package mg.itu.framework.utils;
 
 import mg.itu.framework.annotation.Controller;
+import mg.itu.framework.annotation.Json;
 import mg.itu.framework.annotation.UrlMapping;
 import mg.itu.framework.dto.MethodDTO;
 
@@ -26,6 +27,8 @@ import mg.itu.framework.exception.RouteDejaDefinieException;
 import mg.itu.framework.vue.ModelAndView;
 import mg.itu.framework.vue.ViewResolver;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class Utilitaire {
 
     public Utilitaire() {
@@ -44,9 +47,15 @@ public class Utilitaire {
         return dto.getMethod().invoke(instance);
     }
 
-    public static void render(Object result, ViewResolver vr,
+    public static void render(Method method, Object result, ViewResolver vr,
             HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
+        if (method.isAnnotationPresent(Json.class)) {
+            res.setContentType("application/json;charset=UTF-8");
+            res.getWriter().write(new ObjectMapper().writeValueAsString(result));
+            return;
+        }
+
         if (result instanceof String) {
             req.getRequestDispatcher(vr.resolve((String) result))
                     .forward(req, res);
