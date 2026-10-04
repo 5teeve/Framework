@@ -26,4 +26,14 @@ invoker le methode apres
 
 # Sprint 04
 - Deplacer le load des class dans le Listner (precedemment dans init):
+<<<<<<< Updated upstream
   - Pour charger toutes les classes dès que la page charge
+=======
+  - Pour charger toutes les classes dès que la page charge
+
+# Sprint 07
+- Cree une formulaire
+- Binding: formulaire envoye et transformet les donne en objet
+- Donne vue to controller
+- save(nom, age, ...): les attributs donnees un par un d'abord et apres on en cree un objet
+>>>>>>> Stashed changes
