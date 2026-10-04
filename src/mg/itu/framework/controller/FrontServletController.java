@@ -82,9 +82,9 @@ public abstract class FrontServletController extends HttpServlet {
 
         if (trouve != null) {
             try {
-                Object result = Utilitaire.invokeMethod(trouve);
+                Object result = Utilitaire.invokeMethod(trouve, req);
                 Method method = trouve.getMethod();
-                Utilitaire.render(method , result, viewResolver, req, res);
+                Utilitaire.render(method, result, viewResolver, req, res);
             } catch (Exception e) {
                 throw new ServletException("Erreur lors de l'invocation de " + trouve, e);
             }

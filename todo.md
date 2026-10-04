@@ -28,4 +28,11 @@ invoker le methode apres
 - Deplacer le load des class dans le Listner (precedemment dans init):
   - Pour charger toutes les classes dès que la page charge
 
+# Sprint 07
+- Cree une formulaire
+- Binding: formulaire envoye et transformet les donne en objet
+- Donne vue to controller
+- save(nom, age, ...): les attributs donnees un par un d'abord et apres on en cree un objet
+  - Pour charger toutes les classes dès que la page charge
+
 # Sprint 06

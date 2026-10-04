@@ -12,7 +12,11 @@ rm -rf $OUT_DIR
 mkdir -p $OUT_DIR
 
 echo ">> Compilation..."
+<<<<<<< Updated upstream
 javac -cp $SERVLET_API -d $OUT_DIR $(find $SRC_DIR -name "*.java")
+=======
+javac -parameters -cp "$CLASSPATH" -d $OUT_DIR $(find $SRC_DIR -name "*.java")
+>>>>>>> Stashed changes
 
 if [ $? -ne 0 ]; then
     echo "ERREUR : compilation echouee"
