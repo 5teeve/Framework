@@ -12,8 +12,11 @@ rm -rf $OUT_DIR
 mkdir -p $OUT_DIR
 
 echo ">> Compilation..."
-javac -cp $SERVLET_API -d $OUT_DIR $(find $SRC_DIR -name "*.java")
-
+javac -parameters \
+      -cp "$SERVLET_API:$(find $LIB_DIR -name '*.jar' | tr '\n' ':')" \
+      -d $OUT_DIR \
+      $(find $SRC_DIR -name "*.java")
+      
 if [ $? -ne 0 ]; then
     echo "ERREUR : compilation echouee"
     exit 1
