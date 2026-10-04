@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,21 +43,71 @@ public class Utilitaire {
         return Arrays.asList(linePackages.split(";;"));
     }
 
-    public static Object invokeMethod(MethodDTO dto) throws Exception {
-        Object instance = dto.getMethod().getDeclaringClass()
-                .getDeclaredConstructor().newInstance();
-        return dto.getMethod().invoke(instance);
+    public static Object[] resolveArguments(Method method, HttpServletRequest req) throws Exception {
+        java.lang.reflect.Parameter[] params = method.getParameters();
+        Object[] args = new Object[params.length];
+
+        for (int i = 0; i < params.length; i++) {
+            Class<?> type = params[i].getType();
+            String name = params[i].getName();
+
+            if (isSimpleType(type)) {
+                // Phase 1 — paramètre simple (String, int, etc.)
+                String raw = req.getParameter(name);
+                args[i] = convertValue(raw, type);
+            } else {
+                // Phase 2 — objet custom : instancier et remplir champ par champ
+                Object obj = type.getDeclaredConstructor().newInstance();
+                for (java.lang.reflect.Field field : type.getDeclaredFields()) {
+                    field.setAccessible(true);
+                    String raw = req.getParameter(field.getName());
+                    if (raw != null) {
+                        field.set(obj, convertValue(raw, field.getType()));
+                    }
+                }
+                args[i] = obj;
+            }
+        }
+        return args;
+    }
+
+    private static boolean isSimpleType(Class<?> type) {
+        return type == String.class
+                || type == int.class    || type == Integer.class
+                || type == long.class   || type == Long.class
+                || type == double.class || type == Double.class
+                || type == float.class  || type == Float.class
+                || type == boolean.class|| type == Boolean.class;
+    }
+
+    private static Object convertValue(String value, Class<?> type) {
+        if (value == null) return null;
+        if (type == String.class)                    return value;
+        if (type == int.class || type == Integer.class)  return Integer.parseInt(value);
+        if (type == long.class || type == Long.class)    return Long.parseLong(value);
+        if (type == double.class || type == Double.class) return Double.parseDouble(value);
+        if (type == float.class || type == Float.class)  return Float.parseFloat(value);
+        if (type == boolean.class || type == Boolean.class) return Boolean.parseBoolean(value);
+        return null;
+    }
+
+    public static Object invokeMethod(MethodDTO dto, HttpServletRequest req) throws Exception {
+        Method method = dto.getMethod();
+        Object instance = method.getDeclaringClass().getDeclaredConstructor().newInstance();
+        Object[] args = resolveArguments(method, req);
+        return method.invoke(instance, args);
     }
 
     public static void render(Method method, Object result, ViewResolver vr,
             HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
+
         if (method.isAnnotationPresent(Json.class)) {
-            res.setContentType("application/json;charset=UTF-8");
+            res.setContentType("application/json");
             res.getWriter().write(new ObjectMapper().writeValueAsString(result));
             return;
         }
-
+        
         if (result instanceof String) {
             req.getRequestDispatcher(vr.resolve((String) result))
                     .forward(req, res);

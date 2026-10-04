@@ -17,6 +17,8 @@ javac -parameters \
       -d $OUT_DIR \
       $(find $SRC_DIR -name "*.java")
       
+javac -cp $SERVLET_API -d $OUT_DIR $(find $SRC_DIR -name "*.java")
+
 if [ $? -ne 0 ]; then
     echo "ERREUR : compilation echouee"
     exit 1
