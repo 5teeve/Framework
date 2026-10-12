@@ -16,8 +16,6 @@ javac -parameters \
       -cp "$SERVLET_API:$(find $LIB_DIR -name '*.jar' | tr '\n' ':')" \
       -d $OUT_DIR \
       $(find $SRC_DIR -name "*.java")
-      
-javac -cp $SERVLET_API -d $OUT_DIR $(find $SRC_DIR -name "*.java")
 
 if [ $? -ne 0 ]; then
     echo "ERREUR : compilation echouee"

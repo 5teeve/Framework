@@ -29,8 +29,6 @@ import mg.itu.framework.exception.RouteDejaDefinieException;
 import mg.itu.framework.vue.ModelAndView;
 import mg.itu.framework.vue.ViewResolver;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 public class Utilitaire {
 
     public Utilitaire() {
