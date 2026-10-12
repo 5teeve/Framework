@@ -29,8 +29,6 @@ import mg.itu.framework.exception.RouteDejaDefinieException;
 import mg.itu.framework.vue.ModelAndView;
 import mg.itu.framework.vue.ViewResolver;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 public class Utilitaire {
 
     public Utilitaire() {
@@ -52,11 +50,11 @@ public class Utilitaire {
             String name = params[i].getName();
 
             if (isSimpleType(type)) {
-                // Phase 1 — paramètre simple (String, int, etc.)
+                //paramètre simple
                 String raw = req.getParameter(name);
                 args[i] = convertValue(raw, type);
             } else {
-                // Phase 2 — objet custom : instancier et remplir champ par champ
+                // objet custom
                 Object obj = type.getDeclaredConstructor().newInstance();
                 for (java.lang.reflect.Field field : type.getDeclaredFields()) {
                     field.setAccessible(true);
