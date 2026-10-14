@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import mg.itu.framework.dto.RequestMapping;
 import mg.itu.framework.exception.RouteDejaDefinieException;
 import mg.itu.framework.vue.ModelAndView;
@@ -53,6 +54,15 @@ public class Utilitaire {
                 // Phase 1 — paramètre simple (String, int, etc.)
                 String raw = req.getParameter(name);
                 args[i] = convertValue(raw, type);
+            } else if (type == UploadedFile.class) {
+                Part part = req.getPart(params[i].getName());
+                String fileName = part.getSubmittedFileName();
+                String format = fileName.split("\\.")[1];
+                byte[] data = part.getInputStream().readAllBytes();
+                UploadedFile file = new UploadedFile(format, data);
+                args[i] = file;
+            } else if (type == HttpServletRequest.class) {
+                args[i] = req;
             } else {
                 // Phase 2 — objet custom : instancier et remplir champ par champ
                 Object obj = type.getDeclaredConstructor().newInstance();
@@ -71,21 +81,28 @@ public class Utilitaire {
 
     private static boolean isSimpleType(Class<?> type) {
         return type == String.class
-                || type == int.class    || type == Integer.class
-                || type == long.class   || type == Long.class
+                || type == int.class || type == Integer.class
+                || type == long.class || type == Long.class
                 || type == double.class || type == Double.class
-                || type == float.class  || type == Float.class
-                || type == boolean.class|| type == Boolean.class;
+                || type == float.class || type == Float.class
+                || type == boolean.class || type == Boolean.class;
     }
 
     private static Object convertValue(String value, Class<?> type) {
-        if (value == null) return null;
-        if (type == String.class)                    return value;
-        if (type == int.class || type == Integer.class)  return Integer.parseInt(value);
-        if (type == long.class || type == Long.class)    return Long.parseLong(value);
-        if (type == double.class || type == Double.class) return Double.parseDouble(value);
-        if (type == float.class || type == Float.class)  return Float.parseFloat(value);
-        if (type == boolean.class || type == Boolean.class) return Boolean.parseBoolean(value);
+        if (value == null)
+            return null;
+        if (type == String.class)
+            return value;
+        if (type == int.class || type == Integer.class)
+            return Integer.parseInt(value);
+        if (type == long.class || type == Long.class)
+            return Long.parseLong(value);
+        if (type == double.class || type == Double.class)
+            return Double.parseDouble(value);
+        if (type == float.class || type == Float.class)
+            return Float.parseFloat(value);
+        if (type == boolean.class || type == Boolean.class)
+            return Boolean.parseBoolean(value);
         return null;
     }
 
@@ -105,7 +122,7 @@ public class Utilitaire {
             res.getWriter().write(new ObjectMapper().writeValueAsString(result));
             return;
         }
-        
+
         if (result instanceof String) {
             req.getRequestDispatcher(vr.resolve((String) result))
                     .forward(req, res);
