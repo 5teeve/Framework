@@ -5,7 +5,7 @@ LIB_DIR="lib"
 SRC_DIR="src"
 OUT_DIR="out"
 JAR_NAME="framework.jar"
-SERVLET_API="$LIB_DIR/servlet-api.jar"
+SERVLET_API="$LIB_DIR/"
 
 echo ">> Nettoyage..."
 rm -rf $OUT_DIR
