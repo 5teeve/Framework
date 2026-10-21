@@ -63,7 +63,6 @@ public class Utilitaire {
                 UploadedFile file = new UploadedFile(format, data);
                 args[i] = file;
             } else if (type == Session.class) {
-                // Singleton par utilisateur, Map remplie depuis la HttpSession
                 args[i] = Session.getInstance(req);
             } else {
                 // Phase 2 — objet custom : instancier et remplir champ par champ

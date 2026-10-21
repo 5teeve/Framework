@@ -4,17 +4,21 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
+import jakarta.servlet.http.HttpSessionEvent;
+import jakarta.servlet.http.HttpSessionListener;
 import mg.itu.framework.dto.MethodDTO;
 import mg.itu.framework.dto.RequestMapping;
+import mg.itu.framework.utils.Session;
 import mg.itu.framework.utils.Utilitaire;
 import mg.itu.framework.vue.ViewResolver;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @WebListener
-public class FrameworkInitializerListener implements ServletContextListener {
+public class FrameworkInitializerListener implements ServletContextListener, HttpSessionListener {
 
     public static final String PACKAGES_PARAM = "base-packages";
     public static final String PREFIX_PARAM = "view.prefix";
@@ -29,7 +33,6 @@ public class FrameworkInitializerListener implements ServletContextListener {
         ServletContext context = sce.getServletContext();
         Utilitaire utilitaire = new Utilitaire();
 
-        // --- Scan des contrôleurs ---
         List<String> packagesName = Utilitaire.parsePackages(context.getInitParameter(PACKAGES_PARAM));
         List<Class<?>> listeController = new ArrayList<>();
 
@@ -56,6 +59,8 @@ public class FrameworkInitializerListener implements ServletContextListener {
                 suffix != null ? suffix : ".jsp");
         context.setAttribute(VIEW_RESOLVER_ATTRIBUTE, viewResolver);
 
+        context.setAttribute(Session.SESSIONS_ATTRIBUTE, new ConcurrentHashMap<String, Session>());
+
         System.out.println("FrameworkInitializerListener : " + listeController.size()
                 + " controleur(s), " + mapMethode.size() + " route(s), ViewResolver ["
                 + viewResolver.getPrefix() + " | " + viewResolver.getSuffix() + "] charges.");
@@ -67,5 +72,14 @@ public class FrameworkInitializerListener implements ServletContextListener {
         context.removeAttribute(CONTROLLERS_ATTRIBUTE);
         context.removeAttribute(MAPPING_ATTRIBUTE);
         context.removeAttribute(VIEW_RESOLVER_ATTRIBUTE);
+        context.removeAttribute(Session.SESSIONS_ATTRIBUTE);
+    }
+
+    @Override
+    public void sessionDestroyed(HttpSessionEvent se) {
+        Object sessions = se.getSession().getServletContext().getAttribute(Session.SESSIONS_ATTRIBUTE);
+        if (sessions instanceof Map) {
+            ((Map<?, ?>) sessions).remove(se.getSession().getId());
+        }
     }
 }

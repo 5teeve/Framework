@@ -1,18 +1,19 @@
 package mg.itu.framework.utils;
 
-import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
-public class Session implements Serializable {
+public class Session {
 
-    private static final String CLE_INSTANCE = "mg.itu.framework.utils.Session.INSTANCE";
+    public static final String SESSIONS_ATTRIBUTE = "mg.itu.framework.sessions";
 
     private final Map<String, Object> attributs = new HashMap<>();
 
@@ -21,11 +22,15 @@ public class Session implements Serializable {
 
     public static Session getInstance(HttpServletRequest req) {
         HttpSession http = req.getSession(true);
-        Session s = (Session) http.getAttribute(CLE_INSTANCE);
-        if (s == null) {
-            s = new Session();
-            http.setAttribute(CLE_INSTANCE, s);
+        ServletContext context = req.getServletContext();
+
+        Map<String, Session> sessions = (Map<String, Session>) context.getAttribute(SESSIONS_ATTRIBUTE);
+        if (sessions == null) { 
+            sessions = new ConcurrentHashMap<>();
+            context.setAttribute(SESSIONS_ATTRIBUTE, sessions);
         }
+
+        Session s = sessions.computeIfAbsent(http.getId(), id -> new Session());
         s.charger(http);
         return s;
     }
@@ -35,9 +40,7 @@ public class Session implements Serializable {
         Enumeration<String> noms = http.getAttributeNames();
         while (noms.hasMoreElements()) {
             String nom = noms.nextElement();
-            if (!CLE_INSTANCE.equals(nom)) {
-                attributs.put(nom, http.getAttribute(nom));
-            }
+            attributs.put(nom, http.getAttribute(nom));
         }
     }
 
@@ -49,7 +52,6 @@ public class Session implements Serializable {
         while (noms.hasMoreElements()) {
             existants.add(noms.nextElement());
         }
-        existants.remove(CLE_INSTANCE);
 
         for (String nom : existants) {
             if (!attributs.containsKey(nom)) {
