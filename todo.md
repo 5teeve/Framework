@@ -35,4 +35,8 @@ invoker le methode apres
 - save(nom, age, ...): les attributs donnees un par un d'abord et apres on en cree un objet
   - Pour charger toutes les classes dès que la page charge
 
-# Sprint 06
+# Sprint 09
+- Session
+- Cree une nouvelle class de session, attribut: Map<String, Object>
+- Dans resolveArgument, ajouter une bloc de verification si c'est cette class session
+- Si oui, remplir la Map avec les attributs du HttpServlet session

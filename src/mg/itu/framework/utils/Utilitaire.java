@@ -13,6 +13,8 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import mg.itu.framework.dto.RequestMapping;
 import mg.itu.framework.exception.RouteDejaDefinieException;
 import mg.itu.framework.vue.ModelAndView;
@@ -53,6 +56,28 @@ public class Utilitaire {
                 // Phase 1 — paramètre simple (String, int, etc.)
                 String raw = req.getParameter(name);
                 args[i] = convertValue(raw, type);
+            } else if (type == UploadedFile.class) {
+                Part part = req.getPart(params[i].getName());
+                String fileName = part.getSubmittedFileName();
+                String format = fileName.split("\\.")[1];
+                byte[] data = part.getInputStream().readAllBytes();
+                UploadedFile file = new UploadedFile(format, data);
+                args[i] = file;
+            } else if (type == Session.class) {
+                HttpSession session = req.getSession(false);
+                Session mySession = new Session();
+
+                if (session != null) {
+                    Enumeration<String> noms = session.getAttributeNames();
+
+                    while (noms.hasMoreElements()) {
+                        String nom = noms.nextElement();
+                        Object valeur = session.getAttribute(nom);
+
+                        mySession.setAttribut(nom, valeur);
+                    }
+                }
+                args[i] = mySession;
             } else {
                 // Phase 2 — objet custom : instancier et remplir champ par champ
                 Object obj = type.getDeclaredConstructor().newInstance();
