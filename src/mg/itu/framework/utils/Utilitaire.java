@@ -13,7 +13,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -64,20 +63,8 @@ public class Utilitaire {
                 UploadedFile file = new UploadedFile(format, data);
                 args[i] = file;
             } else if (type == Session.class) {
-                HttpSession session = req.getSession(false);
-                Session mySession = new Session();
-
-                if (session != null) {
-                    Enumeration<String> noms = session.getAttributeNames();
-
-                    while (noms.hasMoreElements()) {
-                        String nom = noms.nextElement();
-                        Object valeur = session.getAttribute(nom);
-
-                        mySession.setAttribut(nom, valeur);
-                    }
-                }
-                args[i] = mySession;
+                // Singleton par utilisateur, Map remplie depuis la HttpSession
+                args[i] = Session.getInstance(req);
             } else {
                 // Phase 2 — objet custom : instancier et remplir champ par champ
                 Object obj = type.getDeclaredConstructor().newInstance();
@@ -118,7 +105,15 @@ public class Utilitaire {
         Method method = dto.getMethod();
         Object instance = method.getDeclaringClass().getDeclaredConstructor().newInstance();
         Object[] args = resolveArguments(method, req);
-        return method.invoke(instance, args);
+        Object result = method.invoke(instance, args);
+
+        // Repercuter dans la HttpSession ce que le dev a modifie dans la Session du framework
+        for (Object arg : args) {
+            if (arg instanceof Session) {
+                ((Session) arg).sauvegarder(req);
+            }
+        }
+        return result;
     }
 
     public static void render(Method method, Object result, ViewResolver vr,
