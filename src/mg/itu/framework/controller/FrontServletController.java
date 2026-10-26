@@ -90,10 +90,34 @@ public abstract class FrontServletController extends HttpServlet {
                     if (session.getAttribute("user") == null) {
                         throw new AuthorisationException("Vous devez etre connecte pour utiliser cette method");
                     }
+                    Authorized auth = trouve.getMethod().getAnnotation(Authorized.class);
+                    String[] roles = auth.roles();
+                    if (roles.length > 0) {
+                        String[] userRoles = (String[]) session.getAttribute("role");
+                        boolean roleAutorise = false;
+                        if (userRoles != null) {
+                            for (String role : roles) {
+                                for (String userRole : userRoles) {
+                                    if (role.equals(userRole)) {
+                                        roleAutorise = true;
+                                        break;
+                                    }
+                                }
+                                if (roleAutorise) {
+                                    break;
+                                }
+                            }
+                        }
+                        if (!roleAutorise) {
+                            throw new AuthorisationException("Vous n'avez pas le role requis pour executer cette action");
+                        }
+                    }
                 }
                 Object result = Utilitaire.invokeMethod(trouve, req);
                 Method method = trouve.getMethod();
                 Utilitaire.render(method, result, viewResolver, req, res);
+            } catch (AuthorisationException e) {
+                throw e;
             } catch (Exception e) {
                 throw new ServletException("Erreur lors de l'invocation de " + trouve, e);
             }

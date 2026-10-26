@@ -49,4 +49,4 @@ invoker le methode apres
 - Il dit qu'une method ne peut etre utilsier que par un utilisateur connecte
 
 # Sprint 10 Bis
-- Tsy connecte fotsiny fa misy role
+- On doit ajouter des roles specifique a chaque fonction, on peut etre admin, manager, ..., ou on peut seuelemnent etre connecte, 
