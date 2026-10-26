@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,21 +94,9 @@ public abstract class FrontServletController extends HttpServlet {
                     Authorized auth = trouve.getMethod().getAnnotation(Authorized.class);
                     String[] roles = auth.roles();
                     if (roles.length > 0) {
-                        String[] userRoles = (String[]) session.getAttribute("role");
-                        boolean roleAutorise = false;
-                        if (userRoles != null) {
-                            for (String role : roles) {
-                                for (String userRole : userRoles) {
-                                    if (role.equals(userRole)) {
-                                        roleAutorise = true;
-                                        break;
-                                    }
-                                }
-                                if (roleAutorise) {
-                                    break;
-                                }
-                            }
-                        }
+                        String userRole = (String) session.getAttribute("role");
+                        boolean roleAutorise = userRole != null
+                                && Arrays.asList(roles).contains(userRole.toLowerCase());
                         if (!roleAutorise) {
                             throw new AuthorisationException("Vous n'avez pas le role requis pour executer cette action");
                         }
