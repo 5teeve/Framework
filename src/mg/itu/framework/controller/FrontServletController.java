@@ -74,7 +74,7 @@ public abstract class FrontServletController extends HttpServlet {
     private void handleRequest(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException, AuthorisationException {
 
-        String url = req.getPathInfo();
+        String url = req.getServletPath();
         if (url == null || url.trim().isEmpty()) {
             url = "/";
         }
