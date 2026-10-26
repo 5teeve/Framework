@@ -35,4 +35,18 @@ invoker le methode apres
 - save(nom, age, ...): les attributs donnees un par un d'abord et apres on en cree un objet
   - Pour charger toutes les classes dès que la page charge
 
-# Sprint 06
+# Sprint 09
+- Session
+- Cree une nouvelle class de session, attribut: Map<String, Object>
+- Dans resolveArgument, ajouter une bloc de verification si c'est cette class session
+- Si oui, remplir la Map avec les attributs du HttpServlet session
+- Stocker le Map des session dans le servletContext
+
+# Sprint 10
+- Authorisation
+- Cree une nouvelle annotation
+- Methode action anaty controller dev associer url
+- Il dit qu'une method ne peut etre utilsier que par un utilisateur connecte
+
+# Sprint 10 Bis
+- Tsy connecte fotsiny fa misy role
