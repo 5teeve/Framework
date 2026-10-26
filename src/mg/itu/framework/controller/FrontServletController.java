@@ -4,8 +4,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import mg.itu.framework.annotation.Authorized;
 import mg.itu.framework.dto.MethodDTO;
 import mg.itu.framework.dto.RequestMapping;
+import mg.itu.framework.exception.AuthorisationException;
 import mg.itu.framework.listener.FrameworkInitializerListener;
 import mg.itu.framework.utils.Utilitaire;
 import mg.itu.framework.vue.ViewResolver;
@@ -69,7 +72,7 @@ public abstract class FrontServletController extends HttpServlet {
     }
 
     private void handleRequest(HttpServletRequest req, HttpServletResponse res)
-            throws ServletException, IOException {
+            throws ServletException, IOException, AuthorisationException {
 
         String url = req.getServletPath();
         if (url == null || url.trim().isEmpty()) {
@@ -82,6 +85,12 @@ public abstract class FrontServletController extends HttpServlet {
 
         if (trouve != null) {
             try {
+                if (trouve.getMethod().isAnnotationPresent(Authorized.class)) {
+                    HttpSession session = req.getSession();
+                    if (session.getAttribute("user") == null) {
+                        throw new AuthorisationException("Vous devez etre connecte pour utiliser cette method");
+                    }
+                }
                 Object result = Utilitaire.invokeMethod(trouve, req);
                 Method method = trouve.getMethod();
                 Utilitaire.render(method, result, viewResolver, req, res);
