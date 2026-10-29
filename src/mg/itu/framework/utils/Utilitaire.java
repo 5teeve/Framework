@@ -9,14 +9,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 
@@ -51,7 +53,17 @@ public class Utilitaire {
             Class<?> type = params[i].getType();
             String name = params[i].getName();
 
-            if (isSimpleType(type)) {
+            if (List.class.isAssignableFrom(type)) {
+                Type genericType = params[i].getParameterizedType();
+                if (!(genericType instanceof ParameterizedType)) {
+                    throw new IllegalArgumentException("Le paramètre liste '" + name + "' doit préciser son type générique");
+                }
+                Type elementType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
+                if (!(elementType instanceof Class<?>)) {
+                    throw new IllegalArgumentException("Type d'élément non pris en charge pour '" + name + "'");
+                }
+                args[i] = lierListe(name, (Class<?>) elementType, req);
+            } else if (isSimpleType(type)) {
                 // Phase 1 — paramètre simple (String, int, etc.)
                 String raw = req.getParameter(name);
                 args[i] = convertValue(raw, type);
@@ -80,6 +92,33 @@ public class Utilitaire {
         return args;
     }
 
+    private static List<?> lierListe(String name, Class<?> elementType, HttpServletRequest req) throws Exception {
+        List<Object> values = new ArrayList<>();
+        if (isSimpleType(elementType)) {
+            String[] rawValues = req.getParameterValues(name);
+            if (rawValues != null) {
+                for (String raw : rawValues) values.add(convertValue(raw, elementType));
+            }
+            return values;
+        }
+        for (int index = 0; req.getParameter(name + "[" + index + "]." + firstFieldName(elementType)) != null; index++) {
+            Object item = elementType.getDeclaredConstructor().newInstance();
+            for (java.lang.reflect.Field field : elementType.getDeclaredFields()) {
+                field.setAccessible(true);
+                String raw = req.getParameter(name + "[" + index + "]." + field.getName());
+                if (raw != null) field.set(item, convertValue(raw, field.getType()));
+            }
+            values.add(item);
+        }
+        return values;
+    }
+
+    private static String firstFieldName(Class<?> type) {
+        java.lang.reflect.Field[] fields = type.getDeclaredFields();
+        if (fields.length == 0) throw new IllegalArgumentException("Type de liste sans champ: " + type.getName());
+        return fields[0].getName();
+    }
+
     private static boolean isSimpleType(Class<?> type) {
         return type == String.class
                 || type == int.class    || type == Integer.class
@@ -102,11 +141,10 @@ public class Utilitaire {
 
     public static Object invokeMethod(MethodDTO dto, HttpServletRequest req) throws Exception {
         Method method = dto.getMethod();
-        Object instance = method.getDeclaringClass().getDeclaredConstructor().newInstance();
+        Object instance = dto.getInstance();
         Object[] args = resolveArguments(method, req);
         Object result = method.invoke(instance, args);
 
-        // Repercuter dans la HttpSession ce que le dev a modifie dans la Session du framework
         for (Object arg : args) {
             if (arg instanceof Session) {
                 ((Session) arg).sauvegarder(req);
