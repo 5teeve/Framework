@@ -11,6 +11,7 @@ import mg.itu.framework.dto.RequestMapping;
 import mg.itu.framework.exception.AuthorisationException;
 import mg.itu.framework.listener.FrameworkInitializerListener;
 import mg.itu.framework.utils.Utilitaire;
+import mg.itu.framework.utils.ControllerRegistry;
 import mg.itu.framework.vue.ViewResolver;
 
 import java.io.IOException;
@@ -28,6 +29,7 @@ public abstract class FrontServletController extends HttpServlet {
     private List<Class<?>> listeController = new ArrayList<>();
     private Map<RequestMapping, MethodDTO> mapMethode = new LinkedHashMap<>();
     private ViewResolver viewResolver;
+    private ControllerRegistry controllerRegistry;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -36,6 +38,20 @@ public abstract class FrontServletController extends HttpServlet {
         Object mapPubliee = getServletContext().getAttribute(FrameworkInitializerListener.MAPPING_ATTRIBUTE);
         if (mapPubliee instanceof Map) {
             mapMethode.putAll((Map<RequestMapping, MethodDTO>) mapPubliee);
+            Object registryPublie = getServletContext().getAttribute(
+                    FrameworkInitializerListener.CONTROLLER_REGISTRY_ATTRIBUTE);
+            if (registryPublie instanceof ControllerRegistry) {
+                controllerRegistry = (ControllerRegistry) registryPublie;
+            } else {
+                controllerRegistry = new ControllerRegistry();
+                try {
+                    for (MethodDTO dto : mapMethode.values()) {
+                        controllerRegistry.getOrCreate(dto.getClazz());
+                    }
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException("Impossible d'instancier les controleurs au demarrage.", e);
+                }
+            }
         } else {
             // fallback : listener non actif
             utilitaire = new Utilitaire();
@@ -47,7 +63,8 @@ public abstract class FrontServletController extends HttpServlet {
                     listeController.addAll(utilitaire.findController(utilitaire.chargerClassePath(pkg)));
                 }
             }
-            mapMethode.putAll(utilitaire.findMethod(listeController));
+            controllerRegistry = new ControllerRegistry();
+            mapMethode.putAll(utilitaire.findMethod(listeController, controllerRegistry));
         }
 
         // --- ViewResolver ---
@@ -75,7 +92,7 @@ public abstract class FrontServletController extends HttpServlet {
     private void handleRequest(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException, AuthorisationException {
 
-        String url = req.getServletPath();
+        String url = req.getPathInfo();
         if (url == null || url.trim().isEmpty()) {
             url = "/";
         }
@@ -102,11 +119,11 @@ public abstract class FrontServletController extends HttpServlet {
                         }
                     }
                 }
-                Object result = Utilitaire.invokeMethod(trouve, req);
+                Object result = Utilitaire.invokeMethod(trouve, req, controllerRegistry);
                 Method method = trouve.getMethod();
                 Utilitaire.render(method, result, viewResolver, req, res);
             } catch (AuthorisationException e) {
-                throw e;
+                res.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
             } catch (Exception e) {
                 throw new ServletException("Erreur lors de l'invocation de " + trouve, e);
             }

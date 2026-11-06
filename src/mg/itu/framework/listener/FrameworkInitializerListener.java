@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpSessionListener;
 import mg.itu.framework.dto.MethodDTO;
 import mg.itu.framework.dto.RequestMapping;
 import mg.itu.framework.utils.Session;
+import mg.itu.framework.utils.ControllerRegistry;
 import mg.itu.framework.utils.Utilitaire;
 import mg.itu.framework.vue.ViewResolver;
 
@@ -26,6 +27,7 @@ public class FrameworkInitializerListener implements ServletContextListener, Htt
 
     public static final String CONTROLLERS_ATTRIBUTE = "mg.itu.framework.listeController";
     public static final String MAPPING_ATTRIBUTE = "mg.itu.framework.mapMethode";
+    public static final String CONTROLLER_REGISTRY_ATTRIBUTE = "mg.itu.framework.controllerRegistry";
     public static final String VIEW_RESOLVER_ATTRIBUTE = "mg.itu.framework.viewResolver";
 
     @Override
@@ -46,10 +48,12 @@ public class FrameworkInitializerListener implements ServletContextListener, Htt
             }
         }
 
-        Map<RequestMapping, MethodDTO> mapMethode = utilitaire.findMethod(listeController);
+        ControllerRegistry controllerRegistry = new ControllerRegistry();
+        Map<RequestMapping, MethodDTO> mapMethode = utilitaire.findMethod(listeController, controllerRegistry);
 
         context.setAttribute(CONTROLLERS_ATTRIBUTE, listeController);
         context.setAttribute(MAPPING_ATTRIBUTE, mapMethode);
+        context.setAttribute(CONTROLLER_REGISTRY_ATTRIBUTE, controllerRegistry);
 
         // --- ViewResolver ---
         String prefix = context.getInitParameter(PREFIX_PARAM);
@@ -71,6 +75,7 @@ public class FrameworkInitializerListener implements ServletContextListener, Htt
         ServletContext context = sce.getServletContext();
         context.removeAttribute(CONTROLLERS_ATTRIBUTE);
         context.removeAttribute(MAPPING_ATTRIBUTE);
+        context.removeAttribute(CONTROLLER_REGISTRY_ATTRIBUTE);
         context.removeAttribute(VIEW_RESOLVER_ATTRIBUTE);
         context.removeAttribute(Session.SESSIONS_ATTRIBUTE);
     }

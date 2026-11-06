@@ -56,7 +56,8 @@ public class Utilitaire {
             if (List.class.isAssignableFrom(type)) {
                 Type genericType = params[i].getParameterizedType();
                 if (!(genericType instanceof ParameterizedType)) {
-                    throw new IllegalArgumentException("Le paramètre liste '" + name + "' doit préciser son type générique");
+                    throw new IllegalArgumentException(
+                            "Le paramètre liste '" + name + "' doit préciser son type générique");
                 }
                 Type elementType = ((ParameterizedType) genericType).getActualTypeArguments()[0];
                 if (!(elementType instanceof Class<?>)) {
@@ -97,16 +98,19 @@ public class Utilitaire {
         if (isSimpleType(elementType)) {
             String[] rawValues = req.getParameterValues(name);
             if (rawValues != null) {
-                for (String raw : rawValues) values.add(convertValue(raw, elementType));
+                for (String raw : rawValues)
+                    values.add(convertValue(raw, elementType));
             }
             return values;
         }
-        for (int index = 0; req.getParameter(name + "[" + index + "]." + firstFieldName(elementType)) != null; index++) {
+        for (int index = 0; req
+                .getParameter(name + "[" + index + "]." + firstFieldName(elementType)) != null; index++) {
             Object item = elementType.getDeclaredConstructor().newInstance();
             for (java.lang.reflect.Field field : elementType.getDeclaredFields()) {
                 field.setAccessible(true);
                 String raw = req.getParameter(name + "[" + index + "]." + field.getName());
-                if (raw != null) field.set(item, convertValue(raw, field.getType()));
+                if (raw != null)
+                    field.set(item, convertValue(raw, field.getType()));
             }
             values.add(item);
         }
@@ -115,33 +119,42 @@ public class Utilitaire {
 
     private static String firstFieldName(Class<?> type) {
         java.lang.reflect.Field[] fields = type.getDeclaredFields();
-        if (fields.length == 0) throw new IllegalArgumentException("Type de liste sans champ: " + type.getName());
+        if (fields.length == 0)
+            throw new IllegalArgumentException("Type de liste sans champ: " + type.getName());
         return fields[0].getName();
     }
 
     private static boolean isSimpleType(Class<?> type) {
         return type == String.class
-                || type == int.class    || type == Integer.class
-                || type == long.class   || type == Long.class
+                || type == int.class || type == Integer.class
+                || type == long.class || type == Long.class
                 || type == double.class || type == Double.class
-                || type == float.class  || type == Float.class
-                || type == boolean.class|| type == Boolean.class;
+                || type == float.class || type == Float.class
+                || type == boolean.class || type == Boolean.class;
     }
 
     private static Object convertValue(String value, Class<?> type) {
-        if (value == null) return null;
-        if (type == String.class)                    return value;
-        if (type == int.class || type == Integer.class)  return Integer.parseInt(value);
-        if (type == long.class || type == Long.class)    return Long.parseLong(value);
-        if (type == double.class || type == Double.class) return Double.parseDouble(value);
-        if (type == float.class || type == Float.class)  return Float.parseFloat(value);
-        if (type == boolean.class || type == Boolean.class) return Boolean.parseBoolean(value);
+        if (value == null)
+            return null;
+        if (type == String.class)
+            return value;
+        if (type == int.class || type == Integer.class)
+            return Integer.parseInt(value);
+        if (type == long.class || type == Long.class)
+            return Long.parseLong(value);
+        if (type == double.class || type == Double.class)
+            return Double.parseDouble(value);
+        if (type == float.class || type == Float.class)
+            return Float.parseFloat(value);
+        if (type == boolean.class || type == Boolean.class)
+            return Boolean.parseBoolean(value);
         return null;
     }
 
-    public static Object invokeMethod(MethodDTO dto, HttpServletRequest req) throws Exception {
+    public static Object invokeMethod(MethodDTO dto, HttpServletRequest req, ControllerRegistry controllers)
+            throws Exception {
         Method method = dto.getMethod();
-        Object instance = dto.getInstance();
+        Object instance = controllers.getOrCreate(dto.getClazz());
         Object[] args = resolveArguments(method, req);
         Object result = method.invoke(instance, args);
 
@@ -162,7 +175,7 @@ public class Utilitaire {
             res.getWriter().write(new ObjectMapper().writeValueAsString(result));
             return;
         }
-        
+
         if (result instanceof String) {
             req.getRequestDispatcher(vr.resolve((String) result))
                     .forward(req, res);
@@ -179,7 +192,7 @@ public class Utilitaire {
         }
     }
 
-    public Map<RequestMapping, MethodDTO> findMethod(List<Class<?>> classes) {
+    public Map<RequestMapping, MethodDTO> findMethod(List<Class<?>> classes, ControllerRegistry controllers) {
         Map<RequestMapping, MethodDTO> methodes = new LinkedHashMap<>();
         Set<Integer> hashCodesVus = new HashSet<>();
 
@@ -191,6 +204,14 @@ public class Utilitaire {
                     MethodDTO dto = new MethodDTO();
                     dto.setClazz(clazz);
                     dto.setMethod(method);
+                    try {
+                        controllers.getOrCreate(clazz);
+                    } catch (ReflectiveOperationException e) {
+                        throw new IllegalStateException(
+                                "Impossible d'instancier le controleur " + clazz.getName()
+                                        + " au demarrage. Un constructeur sans argument est requis.",
+                                e);
+                    }
 
                     RequestMapping key = new RequestMapping(urlMapping.url(), urlMapping.method());
                     int hash = key.hashCode();

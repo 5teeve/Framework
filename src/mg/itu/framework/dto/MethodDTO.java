@@ -5,7 +5,6 @@ import java.lang.reflect.Method;
 public class MethodDTO {
     private Class<?> clazz;
     private Method method;
-    private Object instance;
 
     public Class<?> getClazz() {
         return clazz;
@@ -21,17 +20,6 @@ public class MethodDTO {
 
     public void setMethod(Method method) {
         this.method = method;
-    }
-
-    public Object getInstance() throws ReflectiveOperationException {
-        if (instance == null) {
-            synchronized (this) {
-                if (instance == null) {
-                    instance = clazz.getDeclaredConstructor().newInstance();
-                }
-            }
-        }
-        return instance;
     }
 
     @Override
